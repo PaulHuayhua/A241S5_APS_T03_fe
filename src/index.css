@@ -1,0 +1,119 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900 antialiased;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
+  }
+  
+  .btn-primary {
+    @apply bg-primary-500 text-white hover:bg-primary-600 active:scale-95;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-200 text-gray-700 hover:bg-gray-300 active:scale-95;
+  }
+  
+  .btn-success {
+    @apply bg-green-500 text-white hover:bg-green-600 active:scale-95;
+  }
+  
+  .btn-danger {
+    @apply bg-red-500 text-white hover:bg-red-600 active:scale-95;
+  }
+  
+  .card {
+    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-5;
+  }
+  
+  .input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all text-sm;
+  }
+  
+  .badge {
+    @apply px-2.5 py-1 rounded-full text-xs font-semibold;
+  }
+  
+  .badge-success {
+    @apply bg-green-100 text-green-800;
+  }
+  
+  .badge-warning {
+    @apply bg-yellow-100 text-yellow-800;
+  }
+  
+  .badge-danger {
+    @apply bg-red-100 text-red-800;
+  }
+  
+  .badge-info {
+    @apply bg-blue-100 text-blue-800;
+  }
+}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Upload de imagen */
+.upload-area {
+  border: 2px dashed #d1d5db;
+  border-radius: 0.5rem;
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.upload-area:hover {
+  border-color: #22c55e;
+  background-color: #f0fdf4;
+}
+
+.upload-area.has-file {
+  border-color: #22c55e;
+  background-color: #f0fdf4;
+}
+
+/* Leaflet Map */
+.leaflet-container {
+  font-family: 'Inter', system-ui, sans-serif;
+  z-index: 0;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 0.5rem;
+}
+
+.leaflet-popup-content {
+  margin: 0;
+}
+
+/* Transitions */
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
