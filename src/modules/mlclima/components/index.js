@@ -1,0 +1,6 @@
+export { default as PrediccionStatsCards } from './PrediccionStatsCards'
+export { default as PrediccionForm } from './PrediccionForm'
+export { default as FactoresRiesgo } from './FactoresRiesgo'
+export { default as PrediccionTable } from './PrediccionTable'
+export { default as PrediccionCharts } from './PrediccionCharts'
+export { ModalDetalle, ModalCambiarEstado, ModalEliminar } from './PrediccionModals'

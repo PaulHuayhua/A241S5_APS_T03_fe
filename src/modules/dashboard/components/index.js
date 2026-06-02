@@ -1,0 +1,5 @@
+export { default as DashboardStatsCards } from './DashboardStatsCards'
+export { default as ClimaWidget } from './ClimaWidget'
+export { default as PrecipitacionChart } from './PrecipitacionChart'
+export { default as SiembrasRecientes } from './SiembrasRecientes'
+export { default as AlertasClimaticas } from './AlertasClimaticas'
