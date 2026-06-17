@@ -65,11 +65,9 @@ export default function AlertasPage() {
   const handleSubmitForm = async (formData) => {
     try {
       const alertaData = {
-        region: {
-          idRegion: formData.region.idRegion
-        },
+        region: formData.region,
         tipoEvento: formData.tipoEvento,
-        nivelRiesgo: formData.nivelRiesgo,
+        nivelRiesgo: formData.nivelRiesgo.toLowerCase(),
         fechaInicio: formData.fechaInicio,
         fechaFin: formData.fechaFin || null,
         descripcion: formData.descripcion,
@@ -146,7 +144,7 @@ export default function AlertasPage() {
     const tipoEventoMatch = filters.tipoEvento.length === 0 || 
       filters.tipoEvento.includes(alerta.tipoEvento)
     const nivelMatch = filters.nivelRiesgo === 'todos' || 
-      alerta.nivelRiesgo === filters.nivelRiesgo
+      (alerta.nivelRiesgo || '').toUpperCase() === filters.nivelRiesgo
     const estadoMatch = !filters.estado || 
       (filters.estado === 'activa' && alerta.activa) ||
       (filters.estado === 'cerrada' && !alerta.activa)
@@ -158,7 +156,7 @@ export default function AlertasPage() {
   const stats = {
     totalAlertas: alertas.length,
     alertasActivas: alertas.filter(a => a.activa).length,
-    alertasCriticas: alertas.filter(a => a.activa && a.nivelRiesgo === 'CRITICO').length,
+    alertasCriticas: alertas.filter(a => a.activa && (a.nivelRiesgo || '').toUpperCase() === 'CRITICO').length,
     alertasCerradas: alertas.filter(a => !a.activa).length
   }
 
