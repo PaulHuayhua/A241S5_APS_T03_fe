@@ -16,7 +16,8 @@ const CosechaTable = ({ cosechas, onView, onEdit, onDelete, loading }) => {
       descarte: { className: 'bg-red-100 text-red-700', label: 'Descarte' }
     }
     
-    return badges[calidad?.toLowerCase()] || { 
+    const key = calidad?.toLowerCase()
+    return badges[key] || { 
       className: 'bg-gray-100 text-gray-700', 
       label: calidad || 'N/A' 
     }
@@ -26,10 +27,14 @@ const CosechaTable = ({ cosechas, onView, onEdit, onDelete, loading }) => {
     const badges = {
       manual: { className: 'bg-blue-50 text-blue-700', label: 'Manual' },
       mecanizada: { className: 'bg-purple-50 text-purple-700', label: 'Mecanizada' },
-      mixta: { className: 'bg-indigo-50 text-indigo-700', label: 'Mixta' }
+      mixta: { className: 'bg-indigo-50 text-indigo-700', label: 'Mixta' },
+      bascula: { className: 'bg-teal-50 text-teal-700', label: 'Báscula' },
+      estimado: { className: 'bg-amber-50 text-amber-700', label: 'Estimado' },
+      pesaje: { className: 'bg-cyan-50 text-cyan-700', label: 'Pesaje' }
     }
     
-    return badges[metodo?.toLowerCase()] || { 
+    const key = metodo?.toLowerCase()
+    return badges[key] || { 
       className: 'bg-gray-50 text-gray-700', 
       label: metodo || 'N/A' 
     }
@@ -93,8 +98,8 @@ const CosechaTable = ({ cosechas, onView, onEdit, onDelete, loading }) => {
         </thead>
         <tbody className="divide-y divide-gray-100">
           {cosechas.map((cosecha) => {
-            const calidadBadge = getCalidadBadge(cosecha.calidadPromedio)
-            const metodoBadge = getMetodoBadge(cosecha.metodoCosecha)
+            const calidadBadge = getCalidadBadge(cosecha.calidadGrado)
+            const metodoBadge = getMetodoBadge(cosecha.metodoMedicion)
             
             return (
               <tr key={cosecha.idCosecha} className="bg-white hover:bg-gray-50 transition-colors">
@@ -121,10 +126,10 @@ const CosechaTable = ({ cosechas, onView, onEdit, onDelete, loading }) => {
                 <td className="px-6 py-4">
                   <div>
                     <p className="text-sm font-semibold text-gray-900">
-                      {cosecha.cantidadCosechadaKg ? (cosecha.cantidadCosechadaKg / 1000).toFixed(2) : '0.00'} ton
+                      {cosecha.produccionKg ? (cosecha.produccionKg / 1000).toFixed(2) : '0.00'} ton
                     </p>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      {cosecha.cantidadCosechadaKg ? cosecha.cantidadCosechadaKg.toFixed(0) : '0'} kg
+                      {cosecha.produccionKg ? Number(cosecha.produccionKg).toFixed(0) : '0'} kg
                     </p>
                   </div>
                 </td>

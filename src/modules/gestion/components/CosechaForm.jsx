@@ -5,9 +5,8 @@ import { cosechaService } from '../services/cosecha.service'
 import { siembraService } from '../services/siembra.service'
 
 const metodosOptions = [
-  { value: 'manual', label: 'Manual' },
-  { value: 'mecanizada', label: 'Mecanizada' },
-  { value: 'mixta', label: 'Mixta' }
+  { value: 'bascula', label: 'Báscula (Pesaje directo)' },
+  { value: 'estimado', label: 'Estimado (Proyección)' }
 ]
 
 const calidadOptions = [
@@ -25,11 +24,11 @@ const CosechaForm = ({ cosecha, onClose, onSuccess }) => {
     idSiembra: '',
     fechaCosecha: '',
     areaCosechadaHa: '',
-    cantidadCosechadaKg: '',
-    metodoCosecha: 'manual',
-    calidadPromedio: 'primera',
-    humedadPorcentaje: '',
-    observaciones: ''
+    produccionKg: '',
+    metodoMedicion: 'bascula',
+    calidadGrado: 'primera',
+    humedadPct: '',
+    notas: ''
   })
 
   useEffect(() => {
@@ -42,11 +41,11 @@ const CosechaForm = ({ cosecha, onClose, onSuccess }) => {
         idSiembra: cosecha.siembra?.idSiembra || '',
         fechaCosecha: cosecha.fechaCosecha || '',
         areaCosechadaHa: cosecha.areaCosechadaHa || '',
-        cantidadCosechadaKg: cosecha.cantidadCosechadaKg || '',
-        metodoCosecha: cosecha.metodoCosecha || 'manual',
-        calidadPromedio: cosecha.calidadPromedio || 'primera',
-        humedadPorcentaje: cosecha.humedadPorcentaje || '',
-        observaciones: cosecha.observaciones || ''
+        produccionKg: cosecha.produccionKg || '',
+        metodoMedicion: cosecha.metodoMedicion || 'bascula',
+        calidadGrado: cosecha.calidadGrado || 'primera',
+        humedadPct: cosecha.humedadPct || '',
+        notas: cosecha.notas || ''
       })
     }
   }, [cosecha])
@@ -54,8 +53,8 @@ const CosechaForm = ({ cosecha, onClose, onSuccess }) => {
   const loadSiembras = async () => {
     try {
       const data = await siembraService.getAll()
-      // Filtrar solo siembras en curso (que pueden ser cosechadas)
-      const siembrasActivas = data.filter(s => s.estado === 'en_curso')
+      // Filtrar siembras en curso o la siembra actual si estamos en modo edición
+      const siembrasActivas = data.filter(s => s.estado === 'en_curso' || (cosecha && s.idSiembra === cosecha.siembra?.idSiembra))
       setSiembras(siembrasActivas)
     } catch (error) {
       console.error('Error al cargar siembras:', error)
@@ -74,7 +73,7 @@ const CosechaForm = ({ cosecha, onClose, onSuccess }) => {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    if (!formData.idSiembra || !formData.fechaCosecha || !formData.areaCosechadaHa || !formData.cantidadCosechadaKg) {
+    if (!formData.idSiembra || !formData.fechaCosecha || !formData.areaCosechadaHa || !formData.produccionKg) {
       toast.error('Complete todos los campos obligatorios')
       return
     }
@@ -83,18 +82,19 @@ const CosechaForm = ({ cosecha, onClose, onSuccess }) => {
       setLoading(true)
 
       // Calcular rendimiento automáticamente
-      const rendimientoTonHa = (parseFloat(formData.cantidadCosechadaKg) / 1000) / parseFloat(formData.areaCosechadaHa)
+      const rendimientoTonHa = (parseFloat(formData.produccionKg) / 1000) / parseFloat(formData.areaCosechadaHa)
 
       const cosechaData = {
         siembra: { idSiembra: parseInt(formData.idSiembra) },
+        usuario: { idUsuario: 2 }, // Usuario por defecto (sesión activa)
         fechaCosecha: formData.fechaCosecha,
         areaCosechadaHa: parseFloat(formData.areaCosechadaHa),
-        cantidadCosechadaKg: parseFloat(formData.cantidadCosechadaKg),
+        produccionKg: parseFloat(formData.produccionKg),
         rendimientoTonHa: rendimientoTonHa,
-        metodoCosecha: formData.metodoCosecha,
-        calidadPromedio: formData.calidadPromedio,
-        humedadPorcentaje: formData.humedadPorcentaje ? parseFloat(formData.humedadPorcentaje) : null,
-        observaciones: formData.observaciones || null
+        metodoMedicion: formData.metodoMedicion,
+        calidadGrado: formData.calidadGrado,
+        humedadPct: formData.humedadPct ? parseFloat(formData.humedadPct) : null,
+        notas: formData.notas || null
       }
 
       if (cosecha) {
@@ -115,8 +115,8 @@ const CosechaForm = ({ cosecha, onClose, onSuccess }) => {
   }
 
   // Calcular rendimiento en tiempo real
-  const rendimientoCalculado = formData.areaCosechadaHa && formData.cantidadCosechadaKg
-    ? ((parseFloat(formData.cantidadCosechadaKg) / 1000) / parseFloat(formData.areaCosechadaHa)).toFixed(2)
+  const rendimientoCalculado = formData.areaCosechadaHa && formData.produccionKg
+    ? ((parseFloat(formData.produccionKg) / 1000) / parseFloat(formData.areaCosechadaHa)).toFixed(2)
     : '0.00'
 
   return (
@@ -198,8 +198,8 @@ const CosechaForm = ({ cosecha, onClose, onSuccess }) => {
               </label>
               <input 
                 type="number" 
-                name="cantidadCosechadaKg"
-                value={formData.cantidadCosechadaKg}
+                name="produccionKg"
+                value={formData.produccionKg}
                 onChange={handleChange}
                 placeholder="0.0"
                 step="0.1"
@@ -225,8 +225,8 @@ const CosechaForm = ({ cosecha, onClose, onSuccess }) => {
                 Método de Cosecha *
               </label>
               <select 
-                name="metodoCosecha"
-                value={formData.metodoCosecha}
+                name="metodoMedicion"
+                value={formData.metodoMedicion}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none bg-white"
                 required
@@ -245,8 +245,8 @@ const CosechaForm = ({ cosecha, onClose, onSuccess }) => {
                 Calidad Promedio *
               </label>
               <select 
-                name="calidadPromedio"
-                value={formData.calidadPromedio}
+                name="calidadGrado"
+                value={formData.calidadGrado}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none bg-white"
                 required
@@ -266,8 +266,8 @@ const CosechaForm = ({ cosecha, onClose, onSuccess }) => {
               </label>
               <input 
                 type="number" 
-                name="humedadPorcentaje"
-                value={formData.humedadPorcentaje}
+                name="humedadPct"
+                value={formData.humedadPct}
                 onChange={handleChange}
                 placeholder="0.0"
                 step="0.1"
@@ -283,8 +283,8 @@ const CosechaForm = ({ cosecha, onClose, onSuccess }) => {
                 Observaciones
               </label>
               <textarea 
-                name="observaciones"
-                value={formData.observaciones}
+                name="notas"
+                value={formData.notas}
                 onChange={handleChange}
                 rows="3"
                 placeholder="Observaciones sobre la cosecha..."

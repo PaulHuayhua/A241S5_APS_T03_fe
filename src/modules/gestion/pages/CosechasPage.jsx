@@ -100,10 +100,10 @@ const CosechasPageRefactored = () => {
       cosecha.siembra?.variedad?.cultivo?.nombreComun?.toLowerCase().includes(filters.busqueda.toLowerCase())
     
     const calidadMatch = filters.calidad === 'todos' || 
-      cosecha.calidadPromedio === filters.calidad
+      cosecha.calidadGrado?.toLowerCase() === filters.calidad.toLowerCase()
     
     const metodoMatch = filters.metodo === 'todos' || 
-      cosecha.metodoCosecha === filters.metodo
+      cosecha.metodoMedicion?.toLowerCase() === filters.metodo.toLowerCase()
     
     const fechaDesdeMatch = !filters.fechaDesde || 
       new Date(cosecha.fechaCosecha) >= new Date(filters.fechaDesde)
@@ -117,12 +117,12 @@ const CosechasPageRefactored = () => {
   // Calcular estadísticas
   const stats = {
     total: cosechas.length,
-    produccionTotal: cosechas.reduce((sum, c) => sum + ((c.cantidadCosechadaKg || 0) / 1000), 0),
+    produccionTotal: cosechas.reduce((sum, c) => sum + ((Number(c.produccionKg) || 0) / 1000), 0),
     rendimientoPromedio: cosechas.length > 0
-      ? cosechas.reduce((sum, c) => sum + (c.rendimientoTonHa || 0), 0) / cosechas.length
+      ? cosechas.reduce((sum, c) => sum + (Number(c.rendimientoTonHa) || 0), 0) / cosechas.length
       : 0,
     calidadPrimera: cosechas.length > 0
-      ? (cosechas.filter(c => c.calidadPromedio === 'primera').length / cosechas.length) * 100
+      ? (cosechas.filter(c => c.calidadGrado?.toLowerCase() === 'primera').length / cosechas.length) * 100
       : 0
   }
 
@@ -147,7 +147,7 @@ const CosechasPageRefactored = () => {
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => toast.info('Función de exportar en desarrollo')}
+            onClick={() => toast('📦 Función de exportar en desarrollo')}
             className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:shadow-md transition-all flex items-center gap-2 text-sm font-medium"
           >
             <Download className="w-4 h-4" />
@@ -225,9 +225,8 @@ const CosechasPageRefactored = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none bg-white"
               >
                 <option value="todos">Todos los métodos</option>
-                <option value="manual">Manual</option>
-                <option value="mecanizada">Mecanizada</option>
-                <option value="mixta">Mixta</option>
+                <option value="bascula">Báscula</option>
+                <option value="estimado">Estimado</option>
               </select>
             </div>
 
@@ -350,33 +349,33 @@ const CosechasPageRefactored = () => {
                 <div>
                   <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Producción</p>
                   <p className="text-sm text-gray-900">
-                    {cosechaToView.cantidadCosechadaKg ? (cosechaToView.cantidadCosechadaKg / 1000).toFixed(2) : '0.00'} ton ({cosechaToView.cantidadCosechadaKg || 0} kg)
+                    {cosechaToView.produccionKg ? (cosechaToView.produccionKg / 1000).toFixed(2) : '0.00'} ton ({cosechaToView.produccionKg || 0} kg)
                   </p>
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Rendimiento</p>
                   <p className="text-sm font-semibold text-primary-600">
-                    {cosechaToView.rendimientoTonHa ? cosechaToView.rendimientoTonHa.toFixed(2) : '0.00'} ton/ha
+                    {cosechaToView.rendimientoTonHa ? Number(cosechaToView.rendimientoTonHa).toFixed(2) : '0.00'} ton/ha
                   </p>
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Método</p>
-                  <p className="text-sm text-gray-900 capitalize">{cosechaToView.metodoCosecha}</p>
+                  <p className="text-sm text-gray-900 capitalize">{cosechaToView.metodoMedicion}</p>
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Calidad</p>
-                  <p className="text-sm text-gray-900 capitalize">{cosechaToView.calidadPromedio}</p>
+                  <p className="text-sm text-gray-900 capitalize">{cosechaToView.calidadGrado}</p>
                 </div>
-                {cosechaToView.humedadPorcentaje && (
+                {cosechaToView.humedadPct && (
                   <div>
                     <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Humedad</p>
-                    <p className="text-sm text-gray-900">{cosechaToView.humedadPorcentaje}%</p>
+                    <p className="text-sm text-gray-900">{cosechaToView.humedadPct}%</p>
                   </div>
                 )}
-                {cosechaToView.observaciones && (
+                {cosechaToView.notas && (
                   <div className="col-span-2">
-                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Observaciones</p>
-                    <p className="text-sm text-gray-900">{cosechaToView.observaciones}</p>
+                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Notas</p>
+                    <p className="text-sm text-gray-900">{cosechaToView.notas}</p>
                   </div>
                 )}
               </div>
