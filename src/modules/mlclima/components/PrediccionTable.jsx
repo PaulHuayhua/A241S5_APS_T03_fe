@@ -1,12 +1,14 @@
-import { Eye, RefreshCw, Trash2, Download, Brain } from 'lucide-react'
+import { Eye, Trash2, Download, Brain, Pencil, RotateCcw, RefreshCw } from 'lucide-react'
 import { exportToExcel, formatearFechaExcel, formatearNumeroExcel } from '../../../shared/utils/exportUtils'
 import toast from 'react-hot-toast'
 
 export default function PrediccionTable({
   predicciones,
   onVerDetalle,
+  onEditar,
   onCambiarEstado,
   onEliminar,
+  onRestaurar,
   onExportar
 }) {
   const formatearFecha = (fecha) => {
@@ -44,6 +46,15 @@ export default function PrediccionTable({
     }
   }
 
+  const getBadgeClass = (estado) => {
+    switch (estado) {
+      case 'activa':    return 'bg-green-100 text-green-800'
+      case 'evaluada':  return 'bg-blue-100 text-blue-800'
+      case 'inactiva':  return 'bg-red-100 text-red-700'
+      default:          return 'bg-gray-100 text-gray-800'
+    }
+  }
+
   return (
     <div className="bg-white rounded-lg border border-gray-200">
       <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
@@ -52,7 +63,7 @@ export default function PrediccionTable({
           <p className="text-xs text-gray-500 mt-0.5">{predicciones.length} predicciones generadas</p>
         </div>
         <div className="flex items-center gap-2">
-          <button 
+          <button
             onClick={onExportar || handleExportarLocal}
             className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
           >
@@ -81,75 +92,106 @@ export default function PrediccionTable({
               <th className="px-6 py-3 text-left bg-gray-50 w-32">
                 <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Estado</span>
               </th>
-              <th className="px-6 py-3 text-center bg-gray-50 w-32">
+              <th className="px-6 py-3 text-center bg-gray-50 w-36">
                 <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Acciones</span>
               </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
             {predicciones.length > 0 ? (
-              predicciones.map((pred) => (
-                <tr key={pred.idPrediccion} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-3 whitespace-nowrap align-middle">
-                    <span className="text-sm font-medium text-gray-900">{formatearFecha(pred.fechaPrediccion)}</span>
-                  </td>
-                  <td className="px-6 py-3 align-middle">
-                    <div className="max-w-[180px]">
-                      <p className="text-sm font-semibold text-gray-900 truncate leading-tight">{pred.siembra?.parcela?.nombreParcela || 'N/A'}</p>
-                      <p className="text-xs text-gray-500 truncate leading-tight mt-0.5">{pred.siembra?.variedad?.cultivo?.nombreComun || 'N/A'}</p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-3 whitespace-nowrap align-middle">
-                    <span className="text-sm text-gray-700">{pred.modelo?.nombreModelo || 'N/A'}</span>
-                  </td>
-                  <td className="px-6 py-3 whitespace-nowrap align-middle">
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900 leading-tight">
-                        {pred.rendimientoEstimadoTonHa?.toFixed(2) || 'N/A'} ton/ha
-                      </p>
-                      <p className="text-xs text-gray-500 leading-tight mt-0.5">
-                        {pred.rendimientoMinTonHa?.toFixed(2) || 'N/A'}-{pred.rendimientoMaxTonHa?.toFixed(2) || 'N/A'}
-                      </p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-3 align-middle">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                      pred.estado === 'activa' 
-                        ? 'bg-green-100 text-green-800'
-                        : pred.estado === 'evaluada'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {pred.estado?.charAt(0).toUpperCase() + pred.estado?.slice(1)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-3 align-middle">
-                    <div className="flex items-center justify-center gap-1">
-                      <button 
-                        onClick={() => onVerDetalle(pred)}
-                        className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                        title="Ver detalles"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => onCambiarEstado(pred)}
-                        className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
-                        title="Cambiar estado"
-                      >
-                        <RefreshCw className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => onEliminar(pred)}
-                        className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                        title="Eliminar"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+              predicciones.map((pred) => {
+                const inactiva = pred.estado === 'inactiva'
+                return (
+                  <tr
+                    key={pred.idPrediccion}
+                    className={`transition-colors ${inactiva ? 'bg-gray-50 opacity-70' : 'hover:bg-gray-50'}`}
+                  >
+                    <td className="px-6 py-3 whitespace-nowrap align-middle">
+                      <span className="text-sm font-medium text-gray-900">{formatearFecha(pred.fechaPrediccion)}</span>
+                    </td>
+                    <td className="px-6 py-3 align-middle">
+                      <div className="max-w-[180px]">
+                        <p className="text-sm font-semibold text-gray-900 truncate leading-tight">
+                          {pred.siembra?.parcela?.nombreParcela || 'N/A'}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate leading-tight mt-0.5">
+                          {pred.siembra?.variedad?.cultivo?.nombreComun || 'N/A'}
+                        </p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-3 whitespace-nowrap align-middle">
+                      <span className="text-sm text-gray-700">{pred.modelo?.nombreModelo || 'N/A'}</span>
+                    </td>
+                    <td className="px-6 py-3 whitespace-nowrap align-middle">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900 leading-tight">
+                          {pred.rendimientoEstimadoTonHa?.toFixed(2) || 'N/A'} ton/ha
+                        </p>
+                        <p className="text-xs text-gray-500 leading-tight mt-0.5">
+                          {pred.rendimientoMinTonHa?.toFixed(2) || 'N/A'}-{pred.rendimientoMaxTonHa?.toFixed(2) || 'N/A'}
+                        </p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-3 align-middle">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${getBadgeClass(pred.estado)}`}>
+                        {pred.estado?.charAt(0).toUpperCase() + pred.estado?.slice(1)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-3 align-middle">
+                      <div className="flex items-center justify-center gap-0.5">
+                        {/* Ver detalle — siempre visible */}
+                        <button
+                          onClick={() => onVerDetalle(pred)}
+                          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                          title="Ver detalles"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+
+                        {inactiva ? (
+                          /* INACTIVA: solo ver + restaurar */
+                          <button
+                            onClick={() => onRestaurar(pred)}
+                            className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
+                            title="Restaurar a activa"
+                          >
+                            <RotateCcw className="w-4 h-4" />
+                          </button>
+                        ) : (
+                          <>
+                            {/* Editar datos */}
+                            <button
+                              onClick={() => onEditar(pred)}
+                              className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all duration-200"
+                              title="Editar"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+
+                            {/* Cambiar estado */}
+                            <button
+                              onClick={() => onCambiarEstado(pred)}
+                              className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200"
+                              title="Cambiar estado"
+                            >
+                              <RefreshCw className="w-4 h-4" />
+                            </button>
+
+                            {/* Desactivar */}
+                            <button
+                              onClick={() => onEliminar(pred)}
+                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                              title="Desactivar"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })
             ) : (
               <tr>
                 <td colSpan="6" className="px-6 py-16 text-center">

@@ -9,7 +9,8 @@ import {
   PrediccionCharts,
   ModalDetalle,
   ModalCambiarEstado,
-  ModalEliminar
+  ModalEliminar,
+  ModalEditar
 } from '../components'
 import { prediccionService } from '../services'
 import { siembraService } from '../../gestion/services'
@@ -32,6 +33,7 @@ export default function PrediccionesPageRefactored() {
   const [modalDetalle, setModalDetalle] = useState(null)
   const [modalEstado, setModalEstado] = useState(null)
   const [modalEliminar, setModalEliminar] = useState(null)
+  const [modalEditar, setModalEditar] = useState(null)
 
   // Cargar datos al montar el componente
   useEffect(() => {
@@ -41,22 +43,36 @@ export default function PrediccionesPageRefactored() {
   const cargarDatos = async () => {
     try {
       setLoading(true)
-      
-      // Cargar predicciones
-      const prediccionesRes = await prediccionService.getAll()
-      setPredicciones(prediccionesRes)
-      
-      // Cargar siembras disponibles (solo las activas)
-      const siembrasRes = await siembraService.getAll()
-      const siembrasActivas = siembrasRes.filter(s => s.estado === 'en_curso')
-      setSiembrasDisponibles(siembrasActivas)
-      
-      if (prediccionesRes.length === 0) {
-        console.log('No hay predicciones registradas')
+
+      // Cargar predicciones y siembras en paralelo, manejando errores individualmente
+      const [prediccionesRes, siembrasRes] = await Promise.allSettled([
+        prediccionService.getAll(),
+        siembraService.getAll()
+      ])
+
+      // Predicciones
+      if (prediccionesRes.status === 'fulfilled') {
+        setPredicciones(prediccionesRes.value || [])
+      } else {
+        console.error('Error cargando predicciones:', prediccionesRes.reason)
+        toast.error('No se pudieron cargar las predicciones')
+        setPredicciones([])
       }
+
+      // Siembras — mostrar en_curso primero, si no hay ninguna mostrar todas
+      if (siembrasRes.status === 'fulfilled') {
+        const todas = siembrasRes.value || []
+        const enCurso = todas.filter(s => s.estado === 'en_curso')
+        setSiembrasDisponibles(enCurso.length > 0 ? enCurso : todas)
+      } else {
+        console.error('Error cargando siembras:', siembrasRes.reason)
+        toast.error('No se pudieron cargar las siembras')
+        setSiembrasDisponibles([])
+      }
+
     } catch (error) {
-      console.error('Error al cargar predicciones:', error)
-      toast.error('Error al cargar las predicciones')
+      console.error('Error inesperado al cargar datos:', error)
+      toast.error('Error al cargar los datos')
     } finally {
       setLoading(false)
     }
@@ -64,10 +80,16 @@ export default function PrediccionesPageRefactored() {
 
   const handleGenerarPrediccion = async () => {
     try {
-      // Generar valores simulados para el rendimiento
-      const rendimientoBase = Math.random() * 10 + 10 // 10-20 ton/ha
-      const variacion = rendimientoBase * 0.15 // 15% de variación
-      
+      // Generar valores simulados garantizando que se cumplan los constraints de la BD:
+      // - rendimiento_min <= rendimiento_estimado <= rendimiento_max
+      // - intervalo_confianza entre 0 y 99.99
+      // - NUMERIC(6,2): máximo 9999.99
+      const estimado  = parseFloat((Math.random() * 10 + 5).toFixed(2))   // 5.00 – 15.00
+      const variacion = parseFloat((estimado * 0.15).toFixed(2))           // 15%
+      const minVal    = parseFloat((estimado - variacion).toFixed(2))
+      const maxVal    = parseFloat((estimado + variacion).toFixed(2))
+      const confianza = parseFloat((Math.random() * 14 + 80).toFixed(2))   // 80.00 – 94.00
+
       await prediccionService.create({
         siembra: { idSiembra: parseInt(selectedSiembra) },
         modelo: { idModelo: parseInt(selectedModel) },
@@ -75,10 +97,10 @@ export default function PrediccionesPageRefactored() {
         fechaClimaInicio,
         fechaClimaFin,
         fuenteClima,
-        rendimientoEstimadoTonHa: parseFloat(rendimientoBase.toFixed(2)),
-        rendimientoMinTonHa: parseFloat((rendimientoBase - variacion).toFixed(2)),
-        rendimientoMaxTonHa: parseFloat((rendimientoBase + variacion).toFixed(2)),
-        intervaloConfianzaPct: parseFloat((Math.random() * 15 + 80).toFixed(2)),
+        rendimientoEstimadoTonHa: estimado,
+        rendimientoMinTonHa: minVal,
+        rendimientoMaxTonHa: maxVal,
+        intervaloConfianzaPct: confianza,
         estado: 'activa',
         notas: `Predicción generada automáticamente usando ${fuenteClima}`
       })
@@ -94,7 +116,8 @@ export default function PrediccionesPageRefactored() {
       setFechaClimaFin('')
     } catch (error) {
       console.error('Error al generar predicción:', error)
-      toast.error('Error al generar la predicción. Verifica que todos los datos sean correctos.')
+      const msg = error?.response?.data || error?.message || 'Error desconocido'
+      toast.error(`Error: ${msg}`)
     }
   }
 
@@ -142,12 +165,31 @@ export default function PrediccionesPageRefactored() {
     setModalDetalle(prediccion)
   }
 
+  const handleEditar = (prediccion) => {
+    setModalEditar(prediccion)
+  }
+
   const handleCambiarEstado = (prediccion) => {
     setModalEstado(prediccion)
   }
 
   const handleEliminar = (prediccion) => {
     setModalEliminar(prediccion)
+  }
+
+  const confirmarEditar = async (id, payload) => {
+    try {
+      const actualizada = await prediccionService.update(id, payload)
+      setPredicciones(predicciones.map(p =>
+        p.idPrediccion === id ? actualizada : p
+      ))
+      toast.success('Predicción actualizada correctamente')
+      setModalEditar(null)
+    } catch (error) {
+      console.error('Error al editar predicción:', error)
+      toast.error('Error al actualizar la predicción')
+      throw error
+    }
   }
 
   const confirmarCambioEstado = async (nuevoEstado) => {
@@ -176,13 +218,31 @@ export default function PrediccionesPageRefactored() {
 
   const confirmarEliminar = async () => {
     try {
-      await prediccionService.delete(modalEliminar.idPrediccion)
-      setPredicciones(predicciones.filter(p => p.idPrediccion !== modalEliminar.idPrediccion))
-      toast.success('Predicción eliminada correctamente')
+      // Soft delete: poner estado "inactiva" en lugar de borrar
+      const payload = { ...modalEliminar, estado: 'inactiva' }
+      await prediccionService.update(modalEliminar.idPrediccion, payload)
+      setPredicciones(predicciones.map(p =>
+        p.idPrediccion === modalEliminar.idPrediccion ? { ...p, estado: 'inactiva' } : p
+      ))
+      toast.success('Predicción desactivada correctamente')
       setModalEliminar(null)
     } catch (error) {
-      console.error('Error al eliminar predicción:', error)
-      toast.error('Error al eliminar la predicción')
+      console.error('Error al desactivar predicción:', error)
+      toast.error('Error al desactivar la predicción')
+    }
+  }
+
+  const handleRestaurar = async (prediccion) => {
+    try {
+      const payload = { ...prediccion, estado: 'activa' }
+      await prediccionService.update(prediccion.idPrediccion, payload)
+      setPredicciones(predicciones.map(p =>
+        p.idPrediccion === prediccion.idPrediccion ? { ...p, estado: 'activa' } : p
+      ))
+      toast.success('Predicción restaurada y marcada como activa')
+    } catch (error) {
+      console.error('Error al restaurar predicción:', error)
+      toast.error('Error al restaurar la predicción')
     }
   }
 
@@ -248,8 +308,10 @@ export default function PrediccionesPageRefactored() {
           <PrediccionTable
             predicciones={predicciones}
             onVerDetalle={handleVerDetalle}
+            onEditar={handleEditar}
             onCambiarEstado={handleCambiarEstado}
             onEliminar={handleEliminar}
+            onRestaurar={handleRestaurar}
             onExportar={handleExportar}
           />
 
@@ -261,6 +323,13 @@ export default function PrediccionesPageRefactored() {
       <ModalDetalle 
         prediccion={modalDetalle} 
         onClose={() => setModalDetalle(null)} 
+      />
+
+      <ModalEditar
+        prediccion={modalEditar}
+        siembrasDisponibles={siembrasDisponibles}
+        onConfirmar={confirmarEditar}
+        onClose={() => setModalEditar(null)}
       />
       
       <ModalCambiarEstado 
