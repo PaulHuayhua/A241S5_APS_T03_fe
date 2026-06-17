@@ -10,7 +10,7 @@ export default function AlertaDetalleModal({ alerta, onClose }) {
       'MEDIO': { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', icon: '🟡' },
       'BAJO': { color: 'bg-green-100 text-green-800 border-green-200', icon: '🟢' }
     }
-    const badge = badges[nivel] || badges['MEDIO']
+    const badge = badges[(nivel || '').toUpperCase()] || badges['MEDIO']
     return (
       <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border ${badge.color}`}>
         <span className="text-lg">{badge.icon}</span>

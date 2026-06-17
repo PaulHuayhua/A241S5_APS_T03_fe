@@ -27,7 +27,7 @@ export default function AlertaForm({ alerta, onSubmit, onClose }) {
       setFormData({
         region: alerta.region,
         tipoEvento: alerta.tipoEvento || '',
-        nivelRiesgo: alerta.nivelRiesgo || 'MEDIO',
+        nivelRiesgo: (alerta.nivelRiesgo || 'MEDIO').toUpperCase(),
         fechaInicio: alerta.fechaInicio || '',
         fechaFin: alerta.fechaFin || '',
         descripcion: alerta.descripcion || '',

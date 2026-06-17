@@ -16,7 +16,7 @@ export default function AlertaTable({
       'MEDIO': { color: 'bg-yellow-100 text-yellow-800', icon: '🟡' },
       'BAJO': { color: 'bg-green-100 text-green-800', icon: '🟢' }
     }
-    const badge = badges[nivel] || badges['MEDIO']
+    const badge = badges[(nivel || '').toUpperCase()] || badges['MEDIO']
     return (
       <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${badge.color}`}>
         <span>{badge.icon}</span>
