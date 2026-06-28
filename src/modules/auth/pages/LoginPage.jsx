@@ -2,34 +2,80 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Mail, Lock, Leaf } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useAuth } from '../context/AuthContext'
+import { authService } from '../services/authService'
 
 const LoginPage = () => {
   const navigate = useNavigate()
+  const { login } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
+  const [loading, setLoading] = useState(false)
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault()
-    
-    // Simulación de login
-    if (email && password) {
-      toast.success('Inicio de sesión exitoso')
-      setTimeout(() => {
-        navigate('/dashboard')
-      }, 500)
-    } else {
+
+    if (!email || !password) {
       toast.error('Por favor complete todos los campos')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const data = await authService.login(email, password)
+      // Guardar en contexto y localStorage
+      login({ nombre: data.nombre, email: data.email, rol: data.rol }, data.token)
+      toast.success(`Bienvenido, ${data.nombre}`)
+      navigate('/dashboard')
+    } catch (err) {
+      toast.error(err.message || 'Error al iniciar sesión')
+    } finally {
+      setLoading(false)
     }
   }
 
   const handleGoogleLogin = () => {
-    toast.success('Iniciando sesión con Google...')
+    // Muestra un modal/prompt para ingresar el email de Google
+    const googleEmail = window.prompt('Ingresa tu email de Google registrado en el sistema:')
+    if (!googleEmail) return
+
+    const googlePassword = window.prompt('Ingresa tu contraseña:')
+    if (!googlePassword) return
+
+    setLoading(true)
+    authService.login(googleEmail.trim(), googlePassword)
+      .then(data => {
+        login({ nombre: data.nombre, email: data.email, rol: data.rol }, data.token)
+        toast.success(`Bienvenido, ${data.nombre}`)
+        navigate('/dashboard')
+      })
+      .catch(err => {
+        toast.error(err.message || 'Usuario no encontrado o credenciales inválidas')
+      })
+      .finally(() => setLoading(false))
   }
 
   const handleMicrosoftLogin = () => {
-    toast.success('Iniciando sesión con Microsoft...')
+    // Muestra un modal/prompt para ingresar el email de Microsoft
+    const msEmail = window.prompt('Ingresa tu email de Microsoft registrado en el sistema:')
+    if (!msEmail) return
+
+    const msPassword = window.prompt('Ingresa tu contraseña:')
+    if (!msPassword) return
+
+    setLoading(true)
+    authService.login(msEmail.trim(), msPassword)
+      .then(data => {
+        login({ nombre: data.nombre, email: data.email, rol: data.rol }, data.token)
+        toast.success(`Bienvenido, ${data.nombre}`)
+        navigate('/dashboard')
+      })
+      .catch(err => {
+        toast.error(err.message || 'Usuario no encontrado o credenciales inválidas')
+      })
+      .finally(() => setLoading(false))
   }
 
   return (
@@ -160,12 +206,15 @@ const LoginPage = () => {
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full bg-green-800 text-white py-3 rounded-lg font-semibold hover:bg-green-900 active:scale-98 transition-all shadow-lg flex items-center justify-center gap-2"
+              disabled={loading}
+              className="w-full bg-green-800 text-white py-3 rounded-lg font-semibold hover:bg-green-900 active:scale-98 transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Ingresar al Sistema
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
+              {loading ? 'Ingresando...' : 'Ingresar al Sistema'}
+              {!loading && (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              )}
             </button>
           </form>
 

@@ -1,6 +1,21 @@
-import { Search, Sun, Bell } from 'lucide-react'
+import { Search, Sun, Bell, LogOut } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../modules/auth/context/AuthContext'
 
 export default function Header() {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
+
+  // Iniciales del nombre
+  const initials = user?.nombre
+    ? user.nombre.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
+    : 'U'
+
   return (
     <header className="fixed top-0 left-64 right-0 h-14 bg-white border-b border-gray-200 z-40">
       <div className="h-full px-6 flex items-center justify-between">
@@ -33,12 +48,20 @@ export default function Header() {
           {/* User Menu */}
           <div className="flex items-center gap-2 pl-3 border-l border-gray-200">
             <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">Ing. Hernandez</p>
-              <p className="text-xs text-gray-500">Jefe de Operaciones</p>
+              <p className="text-sm font-medium text-gray-900">{user?.nombre || 'Usuario'}</p>
+              <p className="text-xs text-gray-500">{user?.rol || ''}</p>
             </div>
             <div className="w-9 h-9 bg-primary-500 rounded-full flex items-center justify-center">
-              <span className="text-white font-semibold text-sm">IH</span>
+              <span className="text-white font-semibold text-sm">{initials}</span>
             </div>
+            {/* Logout */}
+            <button
+              onClick={handleLogout}
+              title="Cerrar sesión"
+              className="p-2 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors text-gray-400"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </div>

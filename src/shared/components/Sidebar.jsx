@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { 
   LayoutDashboard, 
   Map, 
@@ -10,9 +10,9 @@ import {
   Sprout,
   BookOpen,
   Bell,
-  FileText,
-  Cloud
+  LogOut
 } from 'lucide-react'
+import { useAuth } from '../../modules/auth/context/AuthContext'
 
 const menuItems = [
   { 
@@ -65,6 +65,17 @@ const menuItems = [
 ]
 
 export default function Sidebar() {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
+
+  const initials = user?.nombre
+    ? user.nombre.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
+    : 'U'
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 flex flex-col">
       {/* Logo */}
@@ -131,13 +142,20 @@ export default function Sidebar() {
       {/* Footer */}
       <div className="p-4 border-t border-gray-200">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-gray-200 rounded-lg flex items-center justify-center">
-            <span className="text-gray-700 font-semibold text-sm">IH</span>
+          <div className="w-9 h-9 bg-primary-100 rounded-lg flex items-center justify-center">
+            <span className="text-primary-700 font-semibold text-sm">{initials}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-900 truncate">Ing. Hernandez</p>
-            <p className="text-xs text-gray-500 truncate">Jefe de Operaciones</p>
+            <p className="text-sm font-semibold text-gray-900 truncate">{user?.nombre || 'Usuario'}</p>
+            <p className="text-xs text-gray-500 truncate">{user?.rol || ''}</p>
           </div>
+          <button
+            onClick={handleLogout}
+            title="Cerrar sesión"
+            className="p-1.5 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors text-gray-400"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </aside>
